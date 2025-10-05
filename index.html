@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whac a Mole</title>
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
+            background: url("Untitled Project.jpg"); 
+            background-size: cover ;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-position: center;
+            color: white;
+            margin: 0; /* NEW: Ensures no default margin */
+            overflow: hidden; /* NEW: Prevents scrollbars from the loading screen */
+        }
+
+        /* --- NEW: Loading Screen Styles --- */
+        #loading-screen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #play-btn {
+            font-size: 2em;
+            padding: 20px 40px;
+            cursor: pointer;
+            border-radius: 15px;
+            border: 3px solid white;
+            background-color: #4CAF50;
+            color: white;
+            text-shadow: 2px 2px 4px #000000;
+            transition: transform 0.2s ease;
+        }
+
+        #play-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* NEW: Hides the game container initially */
+        #game-container {
+            display: none;
+        }
+        /* --- End of New Styles --- */
+
+
+        h1, h2 {
+             text-shadow: 2px 2px 4px #000000;
+        }
+
+        #board {
+            width: 540px;
+            height: 540px;
+            margin: 10px auto;
+            display: flex;
+            flex-wrap: wrap;
+            background: url("./soil.png");
+            background-size: cover;
+            border: 3px solid white;
+            border-radius: 25px;
+        }
+
+        #board div {
+            width: 180px; 
+            height: 180px;
+            background-image: url("./pipe.png");
+            background-size: cover;
+        }
+
+        #board div img {
+            width: 100px;
+            height: 100px;
+            user-select: none;
+            -moz-user-select: none;
+            -webkit-user-drag: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        #restart-btn {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 10px;
+            border: 2px solid white;
+            background-color: #4CAF50;
+            color: white;
+            margin-top: 10px;
+            text-shadow: 1px 1px 2px #000000;
+        }
+        
+        .hidden {
+            display: none;
+        }
+
+        #guide {
+            width: 540px;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            border: 2px solid white;
+        }
+
+        #guide h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading-screen">
+        <h1>BONK THE BOSS</h1>
+        <h3>WHEN SUPER OG?</h3>
+        <button id="play-btn">▶️ Play Game</button>
+    </div>
+
+    <div id="game-container">
+        <h1>BONK THE BOSS</h1>
+        <h2>WHEN SUPER OG ?</h2>
+        <h2 id="score">0</h2>
+        
+        <button id="restart-btn" class="hidden">Restart Game</button>
+        
+        <div id="board">
+        </div>
+
+        <div id="guide">
+            <h3>How to Play 🕹️</h3>
+            <p>
+                The goal is simple: click on the JAVI (our boss) as it appears from the pipes to score points. Dont try to hit monster or it's <strong>GAME OVER!</strong>
+            </p>
+        </div>
+    </div>
+
+
+    <audio id="background-music" src="15_wWt0p9a.mp3" loop></audio>
+    <audio id="hit-sound" src="slap-sound-effect-funny-memes (1).mp3"></audio>
+    <audio id="game-over-sound" src="game-over-arcade-6435.mp3"></audio>
+
+
+    <script>
+    let currMoleTile;
+    let currPlantTile;
+    let score = 0;
+    let gameOver = false;
+    
+    let restartBtn;
+
+    // Audio elements
+    let bgMusic;
+    let hitSound;
+    let gameOverSound;
+    
+    // REMOVED: isMusicStarted variable is no longer needed
+
+    window.onload = function() {
+        setGame();
+    }
+
+    function setGame() {
+        // NEW: Get elements for loading screen and game container
+        const loadingScreen = document.getElementById("loading-screen");
+        const playBtn = document.getElementById("play-btn");
+        const gameContainer = document.getElementById("game-container");
+
+        // Set up the board
+        for (let i = 0; i < 9; i++) {
+            let tile = document.createElement("div");
+            tile.id = i.toString();
+            tile.addEventListener("click", selectTile);
+            document.getElementById("board").appendChild(tile);
+        }
+        
+        setInterval(setMole, 1000);
+        setInterval(setPlant, 2000);
+
+        restartBtn = document.getElementById("restart-btn");
+        restartBtn.addEventListener("click", restartGame);
+
+        // Get the audio elements from the HTML
+        bgMusic = document.getElementById("background-music");
+        hitSound = document.getElementById("hit-sound");
+        gameOverSound = document.getElementById("game-over-sound");
+        bgMusic.volume = 0.3;
+
+        // NEW: Event listener for the play button
+        playBtn.addEventListener("click", () => {
+            loadingScreen.style.display = "none";
+            gameContainer.style.display = "block";
+            bgMusic.play();
+        });
+    }
+
+    function restartGame() {
+        score = 0;
+        gameOver = false;
+        
+        document.getElementById("score").innerText = "0";
+        restartBtn.classList.add("hidden");
+
+        bgMusic.currentTime = 0;
+        bgMusic.play();
+    }
+
+    function getRandomTile() {
+        let num = Math.floor(Math.random() * 9);
+        return num.toString();
+    }
+
+    function setMole() {
+        if (gameOver) {
+            return;
+        }
+        if (currMoleTile) {
+            currMoleTile.innerHTML = "";
+        }
+        let mole = document.createElement("img");
+        mole.src = "boss.png";
+
+        let num = getRandomTile();
+        if (currPlantTile && currPlantTile.id == num) {
+            return;
+        }
+        currMoleTile = document.getElementById(num);
+        currMoleTile.appendChild(mole);
+    }
+
+    function setPlant() {
+        if (gameOver) {
+            return;
+        }
+        if (currPlantTile) {
+            currPlantTile.innerHTML = "";
+        }
+        let plant = document.createElement("img");
+        plant.src ="monster.png";
+
+        let num = getRandomTile();
+        if (currMoleTile && currMoleTile.id == num) {
+            return;
+        }
+        currPlantTile = document.getElementById(num);
+        currPlantTile.appendChild(plant);
+    }
+
+    function selectTile() {
+        // REMOVED: Logic to start music on first click is gone from here
+
+        if (gameOver) {
+            return;
+        }
+        if (this == currMoleTile) {
+            score += 10;
+            document.getElementById("score").innerText = score.toString();
+            
+            hitSound.currentTime = 0;
+            hitSound.play();
+        }
+        else if (this == currPlantTile) {
+            document.getElementById("score").innerText = "GAME OVER: " + score.toString();
+            gameOver = true;
+            restartBtn.classList.remove("hidden");
+
+            bgMusic.pause();
+            gameOverSound.play();
+        }
+    }
+</script>
+        
+</body>
+</html>
